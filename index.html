@@ -18,8 +18,131 @@
 		let screenWidth = 1000;
 		let screenHeight = 500;
 
+		let maxSpeed = 5;
+
+		let level = 1;
+		let score = 0;
+
+		let gameOver = false;
+
+		class GameCharacter {
+			constructor(x, y, width, height, color, speed) {
+				this.x = x;
+				this.y = y;
+				this.width = width;
+				this.height = height;
+				this.color = color;
+				this.speed = speed;
+			}
+
+			moveHorizontally() {
+				this.x += this.speed;
+			}
+
+			moveVertically() {
+				if(this.y + this.height >= screenHeight || this.y <= 0) {
+					this.speed = -this.speed;
+				}
+				this.y += this.speed;
+			}
+		}
+
+		function randomNumber(min, max) {  
+    		return Math.random() * (max - min) + min; 
+		}  
+
+		var generateEnemies = function() {
+			var numEnemies = randomNumber(3, 6);
+			var enemies = [];
+			var gap = 0;
+
+			for(var i = 0; i <= numEnemies; i++) {
+				var randX = 200 + gap;
+				var randY = randomNumber(0, screenHeight - 50);
+				var randSpeed = randomNumber(3, 5);
+				var enemy = new GameCharacter(randX, randY, 50, 50, "rgb(0, 0, 225)", randSpeed);
+				enemies.push(enemy);
+
+				gap += 200;
+			}
+
+			return enemies;
+		}
+
+		var enemies = generateEnemies();
+		var player = new GameCharacter(10, 225, 50, 50, "rgb(0, 255, 0)", 0);
+
+		document.onkeydown = function(event) {
+			let keyPressed = event.keyCode;
+
+			if(keyPressed == 39) {
+				player.speed = maxSpeed;
+			} else if(keyPressed == 37) {
+				player.speed = -maxSpeed;
+			}
+		}
+
+		document.onkeyup = function(event) {
+			player.speed = 0;
+		}
+
+		var checkCollisions = function(rect1, rect2) {
+			var xOverlap = Math.abs(rect1.x - rect2.x) <= Math.max(rect1.width, rect2.width);
+			var yOverlap = Math.abs(rect1.y - rect2.y) <= Math.max(rect1.height, rect2.height);
+
+			return xOverlap && yOverlap;
+		}
+
+		var draw = function() {
+			ctx.clearRect(0, 0, screenWidth, screenHeight);
+
+			ctx.font = "30px Arial";
+			ctx.fillText("Level: " + level, 10, 50);
+			ctx.fillText("Score: " + score, screenWidth - 150, 50);
+
+			for(var enemy of enemies) {
+				ctx.fillStyle = enemy.color;
+				ctx.fillRect(enemy.x, enemy.y, enemy.width, enemy.height);
+			}
+			
+			ctx.fillStyle = player.color;
+			ctx.fillRect(player.x, player.y, player.width, player.height);
+		}
+
+		var update = function() {
+			player.moveHorizontally();
+
+			for(enemy of enemies) {
+				if(checkCollisions(enemy, player)) {
+					gameOver = true;
+					score = 0;
+					alert("Game over");
+					window.location = '';
+				}
+
+				enemy.moveVertically();
+			}
+
+			if(player.x > screenWidth - 100) {
+				level++;
+				score += randomNumber(50, 250);
+				reset();
+			}
+		}
+
+		var reset = function() {
+			gameOver = false;
+			player.x = 50;
+			player.y = 225;
+
+			enemies = generateEnemies();
+		}
+
 		var step = function() {
-			window.requestAnimationFrame(step);
+			update();
+			draw();
+			
+			if(!gameOver) window.requestAnimationFrame(step);
 		}
 
 		step();
